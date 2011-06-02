@@ -1,61 +1,40 @@
-$ = jQuery
+STATIC = 'static'
+FIXED = 'fixed'
+$.fn.stick = (args) -> s = new Stick(this, args)
 
-$.fn.stick = (args) ->
-  options =
-    offset: 0
-    target: null
-    targetOffset: null
-    onUnstick: null
-    onStick: null
+class Stick
+  constructor: (@target, args) ->
+    @offset = if typeof args is "number" then args else 0
+    $.extend @, args if typeof args is "object"
+    @state = STATIC
+    @resize()
+    ((s) -> $(window).scroll(-> s.scroll(this)).resize(-> s.resize(this)))(@)
 
-  options.offset = args if typeof args is "number"
-  options = $.extend options, args if typeof args is "object"
-
-  options.target = this
-  options.states = 
-    "static": "static",
-    "fixed": "fixed"
-  options.state = options.states.static
-
-  resize = ->
-    position_static() if options.state is options.states.fixed
-    options.targetOffset = parseInt options.target.offset().top
-    options.targetLeft = parseInt options.target.offset().left
-
-    position_fixed() if options.state is options.states.fixed
-    targetBottom = options.targetOffset + options.target.height()
-
-    if $(window).height() < targetBottom
-      options.disable = true;
-      position_static() if options.state == options.states.fixed
-    else
-      options.disable = false
-      scroll()
-
-  position_fixed = ->
-    options.target.css(
-      "position":"fixed",
-      "top": options.offset+"px",
-      "left": options.targetLeft+"px",
-    );
-
-  position_static = ->
-    options.target.css(
-      "position":"static",
-      "top": ""
+  position: ->
+    @target.css(
+      "position": @state
+      "top": @offset+"px"
+      "left": @targetLeft+"px"
     )
 
-  scroll = ->
-    return if options.disable
+  resize: ->
+    @targetOffset = parseInt @target.offset().top
+    @targetLeft = parseInt @target.offset().left
+    targetBottom = @targetOffset + @target.height()
 
-    if (options.targetOffset - $(this).scrollTop()) - options.offset <= 0
-      options.onStick() if options.state == options.states.static && options.onStick
-      position_fixed()
-      options.state = options.states.fixed
+    if $(window).height() < targetBottom
+      @disabled = true
+      @position() if @state is FIXED
     else
-      options.onUnstick() if options.state == options.states.fixed && options.onUnstick
-      position_static()
-      options.state = options.states.static
+      @disabled = false
+      @scroll()
 
-  resize()
-  $(window).scroll(scroll).resize(resize)
+  scroll: (self) ->
+    return if @disabled
+    if (@targetOffset - $(self).scrollTop()) - @offset <= 0
+      @onStick?() if @state is STATIC
+      @state = FIXED
+    else
+      @onUnstick?() if @state is FIXED
+      @state = STATIC
+    @position()

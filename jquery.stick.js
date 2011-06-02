@@ -1,80 +1,71 @@
 (function() {
-  var $;
-  $ = jQuery;
+  var FIXED, STATIC, Stick;
+  STATIC = 'static';
+  FIXED = 'fixed';
   $.fn.stick = function(args) {
-    var options, position_fixed, position_static, resize, scroll;
-    options = {
-      offset: 0,
-      target: null,
-      targetOffset: null,
-      onUnstick: null,
-      onStick: null
-    };
-    if (typeof args === "number") {
-      options.offset = args;
+    var s;
+    return s = new Stick(this, args);
+  };
+  Stick = (function() {
+    function Stick(target, args) {
+      this.target = target;
+      this.offset = typeof args === "number" ? args : 0;
+      if (typeof args === "object") {
+        $.extend(this, args);
+      }
+      this.state = STATIC;
+      this.resize();
+      (function(s) {
+        return $(window).scroll(function() {
+          return s.scroll(this);
+        }).resize(function() {
+          return s.resize(this);
+        });
+      })(this);
     }
-    if (typeof args === "object") {
-      options = $.extend(options, args);
-    }
-    options.target = this;
-    options.states = {
-      "static": "static",
-      "fixed": "fixed"
+    Stick.prototype.position = function() {
+      return this.target.css({
+        "position": this.state,
+        "top": this.offset + "px",
+        "left": this.targetLeft + "px"
+      });
     };
-    options.state = options.states.static;
-    resize = function() {
+    Stick.prototype.resize = function() {
       var targetBottom;
-      if (options.state === options.states.fixed) {
-        position_static();
-      }
-      options.targetOffset = parseInt(options.target.offset().top);
-      options.targetLeft = parseInt(options.target.offset().left);
-      if (options.state === options.states.fixed) {
-        position_fixed();
-      }
-      targetBottom = options.targetOffset + options.target.height();
+      this.targetOffset = parseInt(this.target.offset().top);
+      this.targetLeft = parseInt(this.target.offset().left);
+      targetBottom = this.targetOffset + this.target.height();
       if ($(window).height() < targetBottom) {
-        options.disable = true;
-        if (options.state === options.states.fixed) {
-          return position_static();
+        this.disabled = true;
+        if (this.state === FIXED) {
+          return this.position();
         }
       } else {
-        options.disable = false;
-        return scroll();
+        this.disabled = false;
+        return this.scroll();
       }
     };
-    position_fixed = function() {
-      return options.target.css({
-        "position": "fixed",
-        "top": options.offset + "px",
-        "left": options.targetLeft + "px"
-      });
-    };
-    position_static = function() {
-      return options.target.css({
-        "position": "static",
-        "top": ""
-      });
-    };
-    scroll = function() {
-      if (options.disable) {
+    Stick.prototype.scroll = function(self) {
+      if (this.disabled) {
         return;
       }
-      if ((options.targetOffset - $(this).scrollTop()) - options.offset <= 0) {
-        if (options.state === options.states.static && options.onStick) {
-          options.onStick();
+      if ((this.targetOffset - $(self).scrollTop()) - this.offset <= 0) {
+        if (this.state === STATIC) {
+          if (typeof this.onStick === "function") {
+            this.onStick();
+          }
         }
-        position_fixed();
-        return options.state = options.states.fixed;
+        this.state = FIXED;
       } else {
-        if (options.state === options.states.fixed && options.onUnstick) {
-          options.onUnstick();
+        if (this.state === FIXED) {
+          if (typeof this.onUnstick === "function") {
+            this.onUnstick();
+          }
         }
-        position_static();
-        return options.state = options.states.static;
+        this.state = STATIC;
       }
+      return this.position();
     };
-    resize();
-    return $(window).scroll(scroll).resize(resize);
-  };
+    return Stick;
+  })();
 }).call(this);
