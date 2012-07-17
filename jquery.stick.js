@@ -1,12 +1,19 @@
 (function() {
-  var FIXED, STATIC, Stick;
+  var $, FIXED, STATIC, Stick;
+
+  $ = jQuery;
+
   STATIC = 'static';
+
   FIXED = 'fixed';
+
   $.fn.stick = function(args) {
     var s;
     return s = new Stick(this, args);
   };
+
   Stick = (function() {
+
     function Stick(target, args) {
       this.target = target;
       this.offset = typeof args === "number" ? args : 0;
@@ -23,6 +30,7 @@
         });
       })(this);
     }
+
     Stick.prototype.position = function() {
       return this.target.css({
         "position": this.state,
@@ -30,6 +38,7 @@
         "left": this.targetLeft + "px"
       });
     };
+
     Stick.prototype.resize = function() {
       var targetBottom;
       this.targetOffset = parseInt(this.target.offset().top);
@@ -45,6 +54,7 @@
         return this.scroll();
       }
     };
+
     Stick.prototype.scroll = function(self) {
       if (this.disabled) {
         return;
@@ -66,6 +76,8 @@
       }
       return this.position();
     };
+
     return Stick;
+
   })();
-}).call(this);
+})();

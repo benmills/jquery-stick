@@ -1,3 +1,4 @@
+$ = jQuery
 STATIC = 'static'
 FIXED = 'fixed'
 $.fn.stick = (args) -> s = new Stick(this, args)
